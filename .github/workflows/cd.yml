@@ -143,6 +143,7 @@ jobs:
         run: |
           kubectl kustomize k8s/overlays/prod |
             python -c 'import os,sys; s=sys.stdin.read(); s=s.replace("CHANGE_ME", os.environ["POSTGRES_PASSWORD"], 1).replace("CHANGE_ME", os.environ["REDIS_PASSWORD"], 1).replace("CHANGE_ME", os.environ["LLM_API_KEY"], 1); print(s)' |
+            awk 'BEGIN { RS="---"; ORS="---\n" } $0 !~ /kind: VerticalPodAutoscaler/ { print }' |
             kubectl apply -f -
       - name: Wait for rollout
         run: |
