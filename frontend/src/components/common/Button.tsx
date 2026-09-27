@@ -1,0 +1,1 @@
+import type {ButtonHTMLAttributes} from 'react'; export default function Button({variant='primary',...p}:ButtonHTMLAttributes<HTMLButtonElement>&{variant?:'primary'|'ghost'|'danger'}){return <button className={`btn ${variant}`} {...p}/>}

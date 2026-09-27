@@ -1,0 +1,1 @@
+import {render,screen} from '@testing-library/react'; import {describe,it,expect} from 'vitest'; import CacheStatus from '../src/components/stats/CacheStatus'; describe('CacheStatus',()=>it('renders cache hit',()=>{render(<CacheStatus state="HIT"/>);expect(screen.getByText(/Cache HIT/)).toBeInTheDocument()}));

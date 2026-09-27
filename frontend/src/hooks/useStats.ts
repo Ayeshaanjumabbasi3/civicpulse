@@ -1,0 +1,1 @@
+import {useEffect,useState} from 'react'; import {getStats} from '../api/stats'; export function useStats(){const [data,setData]=useState<Awaited<ReturnType<typeof getStats>>|null>(null);useEffect(()=>{getStats().then(setData)},[]);return {data,loading:!data};}

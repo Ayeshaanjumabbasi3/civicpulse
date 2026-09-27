@@ -1,0 +1,12 @@
+# k3s packages Traefik as a HelmChart. This override replaces the failing
+# mirrored image while keeping k3s' built-in Traefik/ServiceLB integration.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    image:
+      repository: docker.io/library/traefik
+      tag: 3.3.5

@@ -1,0 +1,1 @@
+import {Bell} from 'lucide-react'; export default function Topbar({title}:{title:string}){return <header className="topbar"><div><p className="eyebrow">CIVICPULSE / CITY OPERATIONS</p><h1>{title}</h1></div><div className="top-actions"><span className="live-dot"/> Live data <button className="icon-btn"><Bell size={18}/></button><div className="avatar">AS</div></div></header>}

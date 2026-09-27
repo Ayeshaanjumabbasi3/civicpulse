@@ -1,0 +1,14 @@
+.env
+backend/.env
+backend/.venv/
+backend.venv/
+.venv/
+frontend/node_modules/
+node_modules/
+frontend/dist/
+autoscaler/
+__pycache__/
+.pytest_cache/
+k8s/overlays/**/secret.local.yaml
+docs/evidence/*
+node_modules

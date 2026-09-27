@@ -1,0 +1,1 @@
+export default function EmptyState({onClear}:{onClear:()=>void}){return <div className="empty"><div className="empty-icon">⌁</div><h3>No complaints found</h3><p>Try changing your filters or clearing them.</p><button className="btn ghost" onClick={onClear}>Clear filters</button></div>}

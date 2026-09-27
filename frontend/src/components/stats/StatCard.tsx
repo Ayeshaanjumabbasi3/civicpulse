@@ -1,0 +1,1 @@
+export default function StatCard({label,value,accent}:{label:string;value:number;accent:string}){return <div className="stat-card"><div className={`stat-accent ${accent}`}/><span>{label}</span><strong>{value.toLocaleString()}</strong><small>Compared to last month <b>↗ 8.4%</b></small></div>}

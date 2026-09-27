@@ -1,0 +1,1 @@
+export const validate=(text:string,location:string)=>({text:text.trim().length>=10?'':'Please describe the issue in at least 10 characters.',location:location.trim().length>=3?'':'Please provide a location in at least 3 characters.'});

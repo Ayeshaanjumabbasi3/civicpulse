@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: civicpulse
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+# PostgreSQL uses a StatefulSet because database identity and persistent storage
+# matter; its pods are not interchangeable like stateless application pods.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: civicpulse
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16.4-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom: {configMapKeyRef: {name: civicpulse-config, key: POSTGRES_DB}}
+            - name: POSTGRES_USER
+              valueFrom: {configMapKeyRef: {name: civicpulse-config, key: POSTGRES_USER}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: civicpulse-secrets, key: POSTGRES_PASSWORD}}
+          resources:
+            requests: {cpu: "100m", memory: "128Mi"}
+            limits: {cpu: "500m", memory: "512Mi"}
+          startupProbe:
+            exec: {command: ["pg_isready", "-U", "civicpulse", "-d", "civicpulse"]}
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            exec: {command: ["pg_isready", "-U", "civicpulse", "-d", "civicpulse"]}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: ["pg_isready", "-U", "civicpulse", "-d", "civicpulse"]}
+            periodSeconds: 20
+          volumeMounts:
+            - {name: pgdata, mountPath: /var/lib/postgresql/data}
+  volumeClaimTemplates:
+    - metadata: {name: pgdata}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 2Gi}

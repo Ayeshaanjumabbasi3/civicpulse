@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+env:
+  TRIAGE_PROVIDER: simulated
+
+jobs:
+  lint-and-type:
+    name: Lint and type-check
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            working-directory: backend
+          - name: frontend
+            working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        if: matrix.name == 'backend'
+        with:
+          python-version: '3.12'
+      - name: Install backend quality tools
+        if: matrix.name == 'backend'
+        working-directory: backend
+        run: python -m pip install -e '.[test]' ruff mypy
+      - name: Ruff
+        if: matrix.name == 'backend'
+        working-directory: backend
+        run: ruff check .
+      - name: Mypy
+        if: matrix.name == 'backend'
+        working-directory: backend
+        run: mypy app
+      - uses: actions/setup-node@v4
+        if: matrix.name == 'frontend'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        if: matrix.name == 'frontend'
+        working-directory: frontend
+        run: npm ci --include=optional
+      - name: ESLint
+        if: matrix.name == 'frontend'
+        working-directory: frontend
+        run: npx --yes eslint@9 . --no-config-lookup --no-warn-ignored
+      - name: TypeScript
+        if: matrix.name == 'frontend'
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+  test-backend:
+    name: Backend tests and coverage
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env:
+          POSTGRES_DB: civicpulse
+          POSTGRES_USER: civicpulse
+          POSTGRES_PASSWORD: civicpulse
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U civicpulse -d civicpulse"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7.4.1-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql+psycopg://civicpulse:civicpulse@localhost:5432/civicpulse
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install test dependencies
+        working-directory: backend
+        run: python -m pip install -e '.[test]' pytest-cov
+      - name: Run migrations
+        working-directory: backend
+        run: alembic upgrade head
+      - name: Require at least 14 backend tests and 65% coverage
+        working-directory: backend
+        run: |
+          count=$(pytest --collect-only -q | awk '/ tests collected/{print $1; exit}')
+          test "${count:-0}" -ge 14 || { echo "Expected at least 14 tests, found ${count:-0}"; exit 1; }
+          pytest --cov=app --cov-report=term-missing --cov-fail-under=65
+
+  test-frontend:
+    name: Frontend tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --include=optional
+      - name: Require at least 5 component tests
+        working-directory: frontend
+        run: |
+          count=$(grep -RhoE '\b(it|test)\s*\(' tests | wc -l)
+          test "$count" -ge 5 || { echo "Expected at least 5 component tests, found $count"; exit 1; }
+          npm run test -- --run
+
+  build:
+    name: Build images (no push)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build backend
+        run: docker build --tag civicpulse-backend:ci ./backend
+      - name: Build frontend
+        run: docker build --tag civicpulse-frontend:ci ./frontend
+
+  integration-smoke:
+    name: Compose integration smoke test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create CI environment
+        run: |
+          printf '%s\n' \
+            'POSTGRES_DB=civicpulse' \
+            'POSTGRES_USER=civicpulse' \
+            'POSTGRES_PASSWORD=civicpulse' \
+            'REDIS_PASSWORD=civicpulse' \
+            'TRIAGE_PROVIDER=simulated' \
+            'RATE_LIMIT_PER_MINUTE=60' > .env
+      - name: Start stack
+        run: docker compose up -d --build
+      - name: Smoke test real HTTP path
+        run: |
+          for i in $(seq 1 30); do curl -fsS http://localhost:8000/health && break || sleep 2; done
+          curl -fsS -X POST http://localhost:8000/api/complaints \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"Water is leaking near the market","location":"Market"}' \
+            -o complaint.json
+          test "$(python -c 'import json; print(json.load(open("complaint.json"))["status"])')" = open
+          curl -fsS http://localhost:8000/api/complaints -o complaints.json
+          grep -q 'Water is leaking near the market' complaints.json
+      - name: Always tear down
+        if: always()
+        run: docker compose down -v
+
+  security-and-manifests:
+    name: Security and Kubernetes manifests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build images for scanning
+        run: |
+          docker build -t civicpulse-backend:scan ./backend
+          docker build -t civicpulse-frontend:scan ./frontend
+      - name: Trivy backend
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: civicpulse-backend:scan
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Trivy frontend
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: civicpulse-frontend:scan
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: kubeconform
+        run: |
+          docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:v0.6.7 \
+            -strict -ignore-missing-schemas -summary /work/k8s/base /work/k8s/overlays/dev /work/k8s/overlays/prod

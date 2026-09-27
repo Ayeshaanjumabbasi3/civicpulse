@@ -1,0 +1,1 @@
+export const title=(v:string)=>v.replace('_',' ').replace(/\b\w/g,x=>x.toUpperCase()); export const relative=(d:string)=>{const m=Math.max(1,Math.round((Date.now()-new Date(d).getTime())/60000)); return m<60?`${m}m ago`:m<1440?`${Math.round(m/60)}h ago`:`${Math.round(m/1440)}d ago`;};
