@@ -10,5 +10,4 @@ autoscaler/
 __pycache__/
 .pytest_cache/
 k8s/overlays/**/secret.local.yaml
-docs/evidence/*
 node_modules
