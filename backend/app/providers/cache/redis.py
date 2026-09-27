@@ -14,6 +14,10 @@ class RedisCache:
         if self.client is None:return
         try:self.client.set(key,value,ex=ttl_seconds)
         except Exception as exc:logger.warning('Redis cache write unavailable: %s',exc)
+    def delete(self,key:str)->None:
+        if self.client is None:return
+        try:self.client.delete(key)
+        except Exception as exc:logger.warning('Redis cache delete unavailable: %s',exc)
     def incr_with_expiry(self,key:str,ttl_seconds:int)->int|None:
         if self.client is None:return None
         try:

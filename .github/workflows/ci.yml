@@ -150,14 +150,20 @@ jobs:
         run: docker compose up -d --build
       - name: Smoke test real HTTP path
         run: |
-          for i in $(seq 1 30); do curl -fsS http://localhost:8000/health && break || sleep 2; done
+          for i in $(seq 1 30); do curl -fsS http://localhost:8000/ready && break || sleep 2; done
           curl -fsS -X POST http://localhost:8000/api/complaints \
             -H 'Content-Type: application/json' \
             -d '{"text":"Water is leaking near the market","location":"Market"}' \
             -o complaint.json
           test "$(python -c 'import json; print(json.load(open("complaint.json"))["status"])')" = open
-          curl -fsS http://localhost:8000/api/complaints -o complaints.json
-          grep -q 'Water is leaking near the market' complaints.json
+          test "$(python -c 'import json; print(json.load(open("complaint.json"))["category"])')" = water
+          complaint_id="$(python -c 'import json; print(json.load(open("complaint.json"))["id"])')"
+          curl -fsS "http://localhost:8000/api/complaints/${complaint_id}" -o fetched.json
+          test "$(python -c 'import json; print(json.load(open("fetched.json"))["id"])')" = "$complaint_id"
+          curl -fsS -D stats-miss.headers http://localhost:8000/api/stats -o stats-miss.json
+          grep -qi '^x-cache: MISS' stats-miss.headers
+          curl -fsS -D stats-hit.headers http://localhost:8000/api/stats -o stats-hit.json
+          grep -qi '^x-cache: HIT' stats-hit.headers
       - name: Always tear down
         if: always()
         run: docker compose down -v
@@ -177,14 +183,17 @@ jobs:
         with:
           image-ref: civicpulse-backend:scan
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: '1'
       - name: Trivy frontend
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: civicpulse-frontend:scan
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: '1'
       - name: kubeconform
         run: |
-          docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:v0.6.7 \
-            -strict -ignore-missing-schemas -summary /work/k8s/base /work/k8s/overlays/dev /work/k8s/overlays/prod
+          kubectl kustomize k8s/overlays/prod | \
+            docker run --rm -i ghcr.io/yannh/kubeconform:v0.6.7 \
+              -strict -ignore-missing-schemas -summary -

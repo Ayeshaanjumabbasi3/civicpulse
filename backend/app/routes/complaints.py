@@ -5,7 +5,7 @@ router=APIRouter(prefix='/api/complaints',tags=['complaints'])
 def svc(request:Request): return request.app.state.complaint_service
 @router.post('',response_model=ComplaintResponse,status_code=status.HTTP_201_CREATED)
 def create(payload:ComplaintCreate,request:Request,service=Depends(svc)):
-    result=service.create(payload); request.app.state.stats_repo.invalidate(); return result
+    result=service.create(payload); request.app.state.stats_service.invalidate(); return result
 @router.get('/{complaint_id}',response_model=ComplaintResponse)
 def get_one(complaint_id:str,service=Depends(svc)): return service.get(complaint_id)
 @router.get('',response_model=ComplaintListResponse)
@@ -13,4 +13,4 @@ def list_complaints(request:Request,category:Category|None=None,priority:Priorit
     items,total=request.app.state.repo.list(category,priority,status_,page,page_size); return {'items':items,'page':page,'page_size':page_size,'total':total}
 @router.patch('/{complaint_id}/status',response_model=ComplaintResponse)
 def update_status(complaint_id:str,payload:ComplaintStatusUpdate,request:Request):
-    item=request.app.state.complaint_service.get(complaint_id); result=request.app.state.status_service.update(item,payload.status); request.app.state.stats_repo.invalidate(); return result
+    item=request.app.state.complaint_service.get(complaint_id); result=request.app.state.status_service.update(item,payload.status); request.app.state.stats_service.invalidate(); return result

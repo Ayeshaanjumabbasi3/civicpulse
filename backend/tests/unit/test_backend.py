@@ -113,7 +113,7 @@ def test_ready_endpoint():
 def test_metrics_endpoint():
     response = client.get("/metrics")
     assert response.status_code == 200
-    assert "requests_total" in response.json()
+    assert "civicpulse_requests_total" in response.text
 
 
 @pytest.mark.skipif(

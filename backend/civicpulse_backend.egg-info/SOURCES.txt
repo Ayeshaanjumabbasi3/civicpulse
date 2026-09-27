@@ -5,6 +5,7 @@ app/core/__init__.py
 app/core/config.py
 app/core/errors.py
 app/core/logging.py
+app/core/metrics.py
 app/db/__init__.py
 app/db/base.py
 app/db/session.py
@@ -19,6 +20,7 @@ app/providers/triage/base.py
 app/providers/triage/factory.py
 app/providers/triage/llm.py
 app/providers/triage/ollama.py
+app/providers/triage/prompt_guard.py
 app/providers/triage/rules.py
 app/providers/triage/simulated.py
 app/repositories/__init__.py
