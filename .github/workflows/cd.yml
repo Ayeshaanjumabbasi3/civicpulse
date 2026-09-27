@@ -165,6 +165,6 @@ jobs:
           kubectl rollout status deployment/frontend -n civicpulse --timeout=180s
       - name: Ingress smoke test
         run: |
-          for i in $(seq 1 30); do curl -fsS http://localhost:8080/ >/dev/null && break || sleep 2; done
-          curl -fsS http://localhost:8080/
-          curl -fsS http://localhost:8080/api/complaints
+          for i in $(seq 1 30); do curl -fsS -H 'Host: civicpulse.local' http://localhost:8080/ >/dev/null && break || sleep 2; done
+          curl -fsS -H 'Host: civicpulse.local' http://localhost:8080/
+          curl -fsS -H 'Host: civicpulse.local' http://localhost:8080/api/complaints
