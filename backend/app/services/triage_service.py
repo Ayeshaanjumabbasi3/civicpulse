@@ -2,7 +2,6 @@ import hashlib
 import json
 import time
 from collections import deque
-from app.providers.triage.base import TriageProviderError
 from app.providers.triage.factory import get_provider
 from app.providers.triage.rules import RuleBasedTriage
 from app.schemas.triage import TriageResult
@@ -15,9 +14,16 @@ class TriageService:
         if self.cache:
             cached=self.cache.get(cache_key)
             if cached:
-                result=TriageResult.model_validate(json.loads(cached)); self.outcomes.append({'provider':result.provider,'latency_ms':0,'fallback':False,'cache_hit':True}); return result,0
-        try: result=self.provider.triage(text,location)
-        except TriageProviderError:
+                try:
+                    result=TriageResult.model_validate(json.loads(cached))
+                    metrics.record_cache(True)
+                    self.outcomes.append({'provider':result.provider,'latency_ms':0,'fallback':False,'cache_hit':True})
+                    return result,0
+                except Exception:
+                    pass
+            metrics.record_cache(False)
+        try: result=TriageResult.model_validate(self.provider.triage(text,location))
+        except Exception:
             result=RuleBasedTriage().triage(text,location); result.provider='rules:fallback'; fallback=True
         latency=round((time.perf_counter()-started)*1000); metrics.record_triage(latency,fallback); self.outcomes.append({'provider':result.provider,'latency_ms':latency,'fallback':fallback,'cache_hit':False})
         if self.cache:self.cache.set(cache_key,result.model_dump_json(),86400)

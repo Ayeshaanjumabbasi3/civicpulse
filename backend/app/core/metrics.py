@@ -10,6 +10,14 @@ class Metrics:
         self.triage_seconds_total = 0.0
         self.triage_total = 0
         self.fallback_total = 0
+        self.cache_lookups = 0
+        self.cache_hits = 0
+
+    def record_cache(self, hit: bool) -> None:
+        with self._lock:
+            self.cache_lookups += 1
+            if hit:
+                self.cache_hits += 1
 
     def record_request(self, started: float) -> None:
         with self._lock:
@@ -37,6 +45,12 @@ class Metrics:
                     f"civicpulse_triage_seconds_total {self.triage_seconds_total:.6f}",
                     "# TYPE civicpulse_triage_fallback_total counter",
                     f"civicpulse_triage_fallback_total {self.fallback_total}",
+                    "# TYPE civicpulse_triage_cache_lookups_total counter",
+                    f"civicpulse_triage_cache_lookups_total {self.cache_lookups}",
+                    "# TYPE civicpulse_triage_cache_hits_total counter",
+                    f"civicpulse_triage_cache_hits_total {self.cache_hits}",
+                    "# TYPE civicpulse_triage_cache_hit_ratio gauge",
+                    f"civicpulse_triage_cache_hit_ratio {(self.cache_hits / self.cache_lookups) if self.cache_lookups else 0:.6f}",
                     "",
                 ]
             )
