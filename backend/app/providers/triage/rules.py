@@ -12,4 +12,4 @@ class RuleBasedTriage:
         priority=Priority.high if any(word in value for word in high) else Priority.low if any(word in value for word in low) else Priority.normal
         clean=re.sub(r'\s+',' ',text.strip()).strip(' .')
         summary=(clean[:137]+'...') if len(clean)>140 else clean
-        return TriageResult(category=category,priority=priority,ai_summary=summary,provider=self.name,confidence=.5)
+        return TriageResult(category=category,priority=priority,summary=summary,provider=self.name,confidence=.5)
