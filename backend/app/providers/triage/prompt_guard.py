@@ -1,7 +1,7 @@
 import re
 
 
-INJECTION = re.compile(r"ignore\s+(all|any|the)\s+previous|system\s+prompt|developer\s+message|reveal\s+your\s+instructions", re.I)
+INJECTION = re.compile(r"ignore\s+(?:(?:all|any|the|your)\s+)?previous\s+instructions?|system\s+prompt|developer\s+message|reveal\s+your\s+instructions", re.I)
 
 
 def guard_text(value: str) -> str:

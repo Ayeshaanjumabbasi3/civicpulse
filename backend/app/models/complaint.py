@@ -15,11 +15,11 @@ class ComplaintORM(Base):
     category: Mapped[Category]=mapped_column(ENUM(Category,name='category_enum',create_type=False),nullable=False)
     priority: Mapped[Priority]=mapped_column(ENUM(Priority,name='priority_enum',create_type=False),nullable=False)
     status: Mapped[Status]=mapped_column(ENUM(Status,name='status_enum',create_type=False),nullable=False,server_default=Status.open.value)
-    ai_summary: Mapped[str]=mapped_column(String(140),nullable=False)
+    ai_summary: Mapped[str|None]=mapped_column(String(140),nullable=True)
     triaged_by: Mapped[str]=mapped_column(String,nullable=False)
     triage_latency_ms: Mapped[int|None]=mapped_column(Integer,nullable=True)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now(),nullable=False)
     updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now(),onupdate=func.now(),nullable=False)
 @dataclass
 class Complaint:
-    id: str; text: str; location: str; category: Category; priority: Priority; status: Status; ai_summary: str; triaged_by: str; triage_latency_ms: int; created_at: datetime; updated_at: datetime; reporter_contact: str|None=None
+    id: str; text: str; location: str; category: Category; priority: Priority; status: Status; ai_summary: str|None; triaged_by: str; triage_latency_ms: int; created_at: datetime; updated_at: datetime; reporter_contact: str|None=None

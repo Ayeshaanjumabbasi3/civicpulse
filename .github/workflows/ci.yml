@@ -94,6 +94,9 @@ jobs:
       - name: Run migrations
         working-directory: backend
         run: alembic upgrade head
+      - name: Check frontend API contract
+        working-directory: backend
+        run: python scripts/check_openapi_contract.py
       - name: Require at least 14 backend tests and 65% coverage
         working-directory: backend
         run: |

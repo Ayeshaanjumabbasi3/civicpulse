@@ -13,5 +13,6 @@ class StatsRepository:
             categories={x:0 for x in Category}; priorities={x:0 for x in Priority}
             for value,count in db.execute(select(ComplaintORM.category,func.count()).group_by(ComplaintORM.category)): categories[Category(value)]=count
             for value,count in db.execute(select(ComplaintORM.priority,func.count()).group_by(ComplaintORM.priority)): priorities[Priority(value)]=count
-            resolved=db.scalar(select(func.count()).where(ComplaintORM.status==Status.resolved)) or 0
-            return {'total':total,'by_category':categories,'by_priority':priorities,'resolved':resolved}
+            by_status={x:0 for x in Status}
+            for value,count in db.execute(select(ComplaintORM.status,func.count()).group_by(ComplaintORM.status)): by_status[Status(value)]=count
+            return {'total':total,'by_category':categories,'by_priority':priorities,'by_status':by_status,'resolved':by_status[Status.resolved]}
