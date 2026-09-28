@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
     rate_limit_per_minute: int = 60
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://civicpulse.local"
+    triage_failure_mode: str = ""
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 @lru_cache

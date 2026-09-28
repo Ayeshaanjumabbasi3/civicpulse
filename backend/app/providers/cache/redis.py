@@ -10,6 +10,10 @@ class RedisCache:
         if self.client is None:return None
         try:return self.client.get(key)
         except Exception as exc:logger.warning('Redis cache read unavailable: %s',exc);return None
+    def ready(self)->bool:
+        if self.client is None:return False
+        try:return bool(self.client.ping())
+        except Exception:return False
     def set(self,key:str,value:str,ttl_seconds:int)->None:
         if self.client is None:return
         try:self.client.set(key,value,ex=ttl_seconds)

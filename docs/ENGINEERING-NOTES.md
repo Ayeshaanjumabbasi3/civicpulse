@@ -31,3 +31,7 @@ The backend is attached to the edge and internal Compose networks; PostgreSQL an
 ## 8. Biggest debugging experience
 
 CD initially failed because the ephemeral cluster lacked the VPA CRD, then because a password containing URL-reserved characters broke `DATABASE_URL`, and finally because the ingress smoke test used `/health` and `localhost` even though the ingress routed `/` to frontend and required `Host: civicpulse.local`. These failures produced the current workflow fixes.
+
+## 9. Data indexes and Redis persistence
+
+The `(status, priority)` index supports filtered operator queries, while the `created_at` index supports newest-first pagination. Redis uses AOF on a named volume so rate-limit windows and warm cache entries survive a service restart; the cache remains rebuildable, but preserving it avoids a cold-start burst and keeps distributed throttling state consistent.

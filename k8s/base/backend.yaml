@@ -57,6 +57,8 @@ spec:
               valueFrom: {configMapKeyRef: {name: civicpulse-config, key: TRIAGE_PROVIDER}}
             - name: RATE_LIMIT_PER_MINUTE
               valueFrom: {configMapKeyRef: {name: civicpulse-config, key: RATE_LIMIT_PER_MINUTE}}
+            - name: CORS_ORIGINS
+              valueFrom: {configMapKeyRef: {name: civicpulse-config, key: CORS_ORIGINS}}
             - name: LLM_API_KEY
               valueFrom: {secretKeyRef: {name: civicpulse-secrets, key: LLM_API_KEY}}
           resources:

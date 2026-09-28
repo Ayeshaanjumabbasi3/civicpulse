@@ -28,6 +28,17 @@ services:
       timeout: 5s
       retries: 5
     deploy: {resources: {limits: {cpus: '0.25', memory: 256M}}}
+  ollama:
+    image: ollama/ollama:0.11.10
+    restart: unless-stopped
+    volumes: [ollama_models:/root/.ollama]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy: {resources: {limits: {cpus: '2.0', memory: 2G}}}
   backend:
     build: ./backend
     restart: unless-stopped
@@ -38,6 +49,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      OLLAMA_URL: http://ollama:11434
       TRIAGE_PROVIDER: ${TRIAGE_PROVIDER}
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE}
     volumes: [./backend:/app]
@@ -72,3 +84,4 @@ networks:
 volumes:
   pgdata:
   redisdata:
+  ollama_models:

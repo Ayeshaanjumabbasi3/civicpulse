@@ -59,7 +59,7 @@ def main():
             db.add(ComplaintORM(
                 id=uuid.uuid4(), text=text, location=location,
                 category=category, priority=priority, status=Status.open,
-                ai_summary=text[:140], triaged_by='seed', triage_latency_ms=0,
+                ai_summary=text[:140], triaged_by='rules', triage_latency_ms=0,
                 created_at=now, updated_at=now,
             ))
             inserted += 1

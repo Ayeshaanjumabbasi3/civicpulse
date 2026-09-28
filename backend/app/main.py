@@ -2,9 +2,10 @@ import uuid
 import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI,Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.core.logging import configure_logging
+from app.core.logging import configure_logging,set_request_id,reset_request_id
 from app.core.errors import ConflictError,NotFoundError
 from app.core.config import get_settings
 from app.core.metrics import metrics
@@ -30,8 +31,9 @@ async def lifespan(application: FastAPI):
     dispose_engine()
 
 app=FastAPI(title='CivicPulse API',version='0.1.0',lifespan=lifespan)
-app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:5173','http://127.0.0.1:5173'],allow_origin_regex=r'^https?://(localhost|127\.0\.0\.1):517[3-9]$',allow_methods=['GET','POST','PATCH','OPTIONS'],allow_headers=['Content-Type','X-Request-ID'],expose_headers=['X-Cache','X-Request-ID'])
-settings=get_settings(); repo=SqlAlchemyComplaintRepository(); stats_repo=StatsRepository(); redis_cache=RedisCache(settings.redis_url); triage=TriageService(settings.triage_provider,redis_cache)
+settings=get_settings(); cors_origins=[x.strip() for x in settings.cors_origins.split(',') if x.strip()]
+app.add_middleware(CORSMiddleware,allow_origins=cors_origins,allow_origin_regex=r'^https?://(localhost|127\.0\.0\.1):517[3-9]$',allow_methods=['GET','POST','PATCH','OPTIONS'],allow_headers=['Content-Type','X-Request-ID'],expose_headers=['X-Cache','X-Request-ID'])
+repo=SqlAlchemyComplaintRepository(); stats_repo=StatsRepository(); redis_cache=RedisCache(settings.redis_url); triage=TriageService(settings.triage_provider,redis_cache,settings.triage_failure_mode)
 app.state.repo=repo; app.state.stats_repo=stats_repo; app.state.redis_cache=redis_cache; app.state.triage_service=triage; app.state.complaint_service=ComplaintService(repo,triage); app.state.status_service=StatusService(repo); app.state.stats_service=StatsService(stats_repo,redis_cache)
 
 @app.middleware('http')
@@ -44,7 +46,15 @@ async def rate_limit(request:Request,call_next):
 
 @app.middleware('http')
 async def request_id(request:Request,call_next):
-    started=time.perf_counter(); rid=request.headers.get('X-Request-ID',str(uuid.uuid4())); response=await call_next(request); metrics.record_request(started); response.headers['X-Request-ID']=rid; return response
+    started=time.perf_counter(); rid=request.headers.get('X-Request-ID',str(uuid.uuid4())); token=set_request_id(rid)
+    try:
+        response=await call_next(request); response.headers['X-Request-ID']=rid; return response
+    finally:
+        metrics.record_request(started); reset_request_id(token)
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(_:Request,exc:RequestValidationError):
+    return JSONResponse({'detail':[{'loc':list(error['loc']),'msg':error['msg'],'type':error['type']} for error in exc.errors()]},status_code=400)
 
 @app.exception_handler(ConflictError)
 async def conflict(_:Request,exc:ConflictError): return JSONResponse(content={'detail':exc.detail},status_code=409)

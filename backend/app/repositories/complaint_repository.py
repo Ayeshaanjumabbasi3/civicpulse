@@ -23,7 +23,7 @@ class SqlAlchemyComplaintRepository(ComplaintRepository):
         return Complaint(id=str(row.id),text=row.text,location=row.location,reporter_contact=row.reporter_contact,category=Category(row.category),priority=Priority(row.priority),status=Status(row.status),ai_summary=row.ai_summary,triaged_by=row.triaged_by,triage_latency_ms=row.triage_latency_ms or 0,created_at=row.created_at,updated_at=row.updated_at)
     def add(self,complaint):
         with self._session() as db:
-            row=ComplaintORM(id=uuid.uuid4(),text=complaint.text,location=complaint.location,reporter_contact=complaint.reporter_contact,category=complaint.category,priority=complaint.priority,status=complaint.status,ai_summary=complaint.ai_summary,triaged_by=complaint.triaged_by,triage_latency_ms=complaint.triage_latency_ms)
+            row=ComplaintORM(id=uuid.UUID(complaint.id),text=complaint.text,location=complaint.location,reporter_contact=complaint.reporter_contact,category=complaint.category,priority=complaint.priority,status=complaint.status,ai_summary=complaint.ai_summary,triaged_by=complaint.triaged_by,triage_latency_ms=complaint.triage_latency_ms)
             db.add(row);db.commit();db.refresh(row);return self._domain(row)
     def get(self,complaint_id):
         try: key=uuid.UUID(complaint_id)
