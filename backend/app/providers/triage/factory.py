@@ -8,16 +8,13 @@ from app.providers.triage.simulated import SimulatedTriage
 
 
 def get_provider(name: str, failure_mode: str = "") -> TriageProvider:
-    providers = {
-        "llm": LLMTriage,
-        "ollama": OllamaTriage,
-        "rules": RuleBasedTriage,
-        "simulated": SimulatedTriage,
-    }
-    provider = providers.get(name)
-    if provider is None:
-        logging.getLogger(__name__).warning(
-            "Unknown TRIAGE_PROVIDER=%s; using rules", name
-        )
+    if name == "simulated":
+        return SimulatedTriage(failure_mode)
+    if name == "llm":
+        return LLMTriage()
+    if name == "ollama":
+        return OllamaTriage()
+    if name == "rules":
         return RuleBasedTriage()
-    return provider(failure_mode) if name == "simulated" else provider()
+    logging.getLogger(__name__).warning("Unknown TRIAGE_PROVIDER=%s; using rules", name)
+    return RuleBasedTriage()
