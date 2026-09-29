@@ -20,6 +20,15 @@ COPY app ./app
 COPY scripts ./scripts
 COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
+# Remove vulnerable packages that are present in the slim base image. They are
+# build tooling/optional codecs and are not required by the running API.
+RUN rm -rf \
+    /usr/local/lib/python3.12/site-packages/setuptools \
+    /usr/local/lib/python3.12/site-packages/setuptools-*.dist-info \
+    /usr/local/lib/python3.12/site-packages/wheel \
+    /usr/local/lib/python3.12/site-packages/wheel-*.dist-info \
+    /usr/local/lib/python3.12/site-packages/msgpack \
+    /usr/local/lib/python3.12/site-packages/msgpack-*.dist-info
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
