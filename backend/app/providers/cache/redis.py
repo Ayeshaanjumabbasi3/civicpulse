@@ -1,10 +1,13 @@
 import logging
 from typing import Any, cast
 
+redis_module: Any = None
 try:
-    import redis as redis_module
+    import redis as _redis_module
+
+    redis_module = _redis_module
 except ImportError:
-    redis_module: Any = None
+    pass
 logger = logging.getLogger(__name__)
 
 
