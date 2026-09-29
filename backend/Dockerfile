@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim-bookworm AS builder
 WORKDIR /build
 RUN python -m venv /opt/venv
 COPY pyproject.toml ./
@@ -11,7 +11,7 @@ RUN /opt/venv/bin/pip uninstall --yes setuptools wheel msgpack && \
        -o -name 'wheel' -o -name 'wheel-*.dist-info' \
        -o -name 'msgpack' -o -name 'msgpack-*.dist-info' \) \
     -exec rm -rf {} +
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
 ENV PATH="/opt/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
