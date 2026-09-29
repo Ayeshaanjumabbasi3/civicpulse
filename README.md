@@ -58,3 +58,5 @@ See `docs/evidence/README.md`. Real screenshots, partner collaboration, branch p
 ## Rollback
 
 Use `kubectl rollout undo deployment/backend -n civicpulse` and the equivalent frontend command, or pin a previous known-good SHA in `k8s/overlays/prod/kustomization.yaml` and apply the overlay.
+
+Branch protection test.
