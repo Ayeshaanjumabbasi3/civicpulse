@@ -1,22 +1,26 @@
 import logging
+from typing import Any, cast
 
+redis_module: Any
 try:
-    import redis
+    import redis as _redis_module
 except ImportError:
-    redis = None
+    redis_module = None
+else:
+    redis_module = _redis_module
 logger = logging.getLogger(__name__)
 
 
 class RedisCache:
     def __init__(self, url: str | None = None):
         self.client = (
-            redis.Redis.from_url(
+            redis_module.Redis.from_url(
                 url, socket_connect_timeout=1, socket_timeout=1, decode_responses=True
             )
-            if url and redis
+            if url and redis_module
             else None
         )
-        if url and redis is None:
+        if url and redis_module is None:
             logger.warning(
                 "Redis package is not installed; cache and rate limiting are disabled"
             )
@@ -25,7 +29,7 @@ class RedisCache:
         if self.client is None:
             return None
         try:
-            return self.client.get(key)
+            return cast(str | None, self.client.get(key))
         except Exception as exc:  # noqa: BLE001 - cache failures must not break requests
             logger.warning("Redis cache read unavailable: %s", exc)
             return None

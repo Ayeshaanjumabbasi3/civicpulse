@@ -17,7 +17,7 @@ class TriageService:
         self.provider_name = provider_name
         self.provider = get_provider(provider_name, failure_mode)
         self.cache = cache
-        self.outcomes = deque(maxlen=20)
+        self.outcomes: deque[dict[str, object]] = deque(maxlen=20)
 
     def triage(self, text, location, complaint_id="pending"):
         started = time.perf_counter()
