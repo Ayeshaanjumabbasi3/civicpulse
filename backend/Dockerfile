@@ -2,7 +2,7 @@ FROM python:3.12-slim AS builder
 WORKDIR /build
 RUN python -m venv /opt/venv
 COPY pyproject.toml ./
-RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip "setuptools>=78.1.1" "msgpack>=1.2.1" && /opt/venv/bin/pip install --no-cache-dir fastapi uvicorn[standard] pydantic pydantic-settings sqlalchemy psycopg[binary] alembic redis httpx
+RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip "setuptools==78.1.1" "msgpack==1.2.1" "wheel==0.46.2" && /opt/venv/bin/pip install --no-cache-dir fastapi uvicorn[standard] pydantic pydantic-settings sqlalchemy psycopg[binary] alembic redis httpx
 FROM python:3.12-slim AS runtime
 ENV PATH="/opt/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
@@ -15,7 +15,7 @@ COPY alembic.ini ./alembic.ini
 # The slim base image can contain its own system-site copies of these packages.
 # Upgrade those copies as well as the virtualenv copies so image scanners do not
 # report vulnerable packages that remain outside /opt/venv.
-RUN python -m pip install --no-cache-dir "setuptools==78.1.1" "msgpack==1.2.1"
+RUN python -m pip install --no-cache-dir "setuptools==78.1.1" "msgpack==1.2.1" "wheel==0.46.2"
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
