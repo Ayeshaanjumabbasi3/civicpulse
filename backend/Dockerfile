@@ -12,6 +12,10 @@ COPY app ./app
 COPY scripts ./scripts
 COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
+# The slim base image can contain its own system-site copies of these packages.
+# Upgrade those copies as well as the virtualenv copies so image scanners do not
+# report vulnerable packages that remain outside /opt/venv.
+RUN python -m pip install --no-cache-dir "setuptools==78.1.1" "msgpack==1.2.1"
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
