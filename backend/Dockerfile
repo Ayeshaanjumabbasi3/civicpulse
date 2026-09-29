@@ -12,10 +12,10 @@ COPY app ./app
 COPY scripts ./scripts
 COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
-# The slim base image can contain its own system-site copies of these packages.
-# Upgrade those copies as well as the virtualenv copies so image scanners do not
-# report vulnerable packages that remain outside /opt/venv.
-RUN python -m pip install --no-cache-dir "setuptools==78.1.1" "msgpack==1.2.1" "wheel==0.46.2"
+# Build tools and the optional MessagePack codec are not needed by the running
+# API. Remove them from the final image, including their bundled vendor trees,
+# so the runtime contains only packages required to serve the application.
+RUN /opt/venv/bin/pip uninstall --yes setuptools wheel msgpack
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
