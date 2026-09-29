@@ -16,6 +16,15 @@ COPY alembic.ini ./alembic.ini
 # API. Remove them from the final image, including their bundled vendor trees,
 # so the runtime contains only packages required to serve the application.
 RUN /opt/venv/bin/pip uninstall --yes setuptools wheel msgpack
+# The python:3.12-slim base may also ship these packages outside the venv.
+# They are not runtime dependencies of CivicPulse, so remove those copies too.
+RUN rm -rf \
+    /usr/local/lib/python3.12/site-packages/setuptools \
+    /usr/local/lib/python3.12/site-packages/setuptools-*.dist-info \
+    /usr/local/lib/python3.12/site-packages/wheel \
+    /usr/local/lib/python3.12/site-packages/wheel-*.dist-info \
+    /usr/local/lib/python3.12/site-packages/msgpack \
+    /usr/local/lib/python3.12/site-packages/msgpack-*.dist-info
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
