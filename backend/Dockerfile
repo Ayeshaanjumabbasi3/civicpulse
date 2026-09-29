@@ -25,6 +25,12 @@ RUN rm -rf \
     /usr/local/lib/python3.12/site-packages/wheel-*.dist-info \
     /usr/local/lib/python3.12/site-packages/msgpack \
     /usr/local/lib/python3.12/site-packages/msgpack-*.dist-info
+# Remove any nested vendor copies left by package installers as well.
+RUN find /opt/venv /usr/local/lib/python3.12/site-packages -depth \
+    \( -name 'setuptools' -o -name 'setuptools-*.dist-info' \
+       -o -name 'wheel' -o -name 'wheel-*.dist-info' \
+       -o -name 'msgpack' -o -name 'msgpack-*.dist-info' \) \
+    -exec rm -rf {} +
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
